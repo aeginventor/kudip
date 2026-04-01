@@ -24,13 +24,9 @@ public class CookingLogImage extends BaseEntity {
     @Column(nullable = false)
     private String imageUrl;
 
-    @Column(nullable = false)
-    private int sequence;
-
     @Builder
-    public CookingLogImage(CookingLog cookingLog, String imageUrl, int sequence) {
+    public CookingLogImage(CookingLog cookingLog, String imageUrl) {
         this.cookingLog = cookingLog;
         this.imageUrl = imageUrl;
-        this.sequence = sequence;
     }
 }
