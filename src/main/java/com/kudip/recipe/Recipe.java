@@ -42,4 +42,9 @@ public class Recipe extends BaseEntity {
         this.name = name;
         this.category = category;
     }
+
+    public void update(String name, RecipeCategory category) {
+        this.name = name;
+        this.category = category;
+    }
 }
