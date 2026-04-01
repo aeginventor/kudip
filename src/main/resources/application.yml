@@ -1,6 +1,14 @@
 spring:
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
 
 jwt:
   secret: ${JWT_SECRET}
@@ -15,12 +23,6 @@ cloud:
       static: ap-northeast-2
     s3:
       bucket: ${AWS_S3_BUCKET}
-
-spring:
-  jpa:
-    properties:
-      hibernate:
-        default_batch_fetch_size: 100
 
 springdoc:
   swagger-ui:
