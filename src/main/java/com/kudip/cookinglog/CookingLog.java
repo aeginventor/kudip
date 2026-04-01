@@ -52,6 +52,17 @@ public class CookingLog extends BaseEntity {
     @OneToMany(mappedBy = "cookingLog", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CookingLogImage> images = new ArrayList<>();
 
+    public void update(LocalDate cookedAt, TimeSlot timeSlot, Integer cookTimeMinutes,
+                       String recipeMemo, String processMemo, Integer rating, String diary) {
+        this.cookedAt = cookedAt;
+        this.timeSlot = timeSlot;
+        this.cookTimeMinutes = cookTimeMinutes;
+        this.recipeMemo = recipeMemo;
+        this.processMemo = processMemo;
+        this.rating = rating;
+        this.diary = diary;
+    }
+
     @Builder
     public CookingLog(Recipe recipe, LocalDate cookedAt, TimeSlot timeSlot,
                       Integer cookTimeMinutes, String recipeMemo, String processMemo,

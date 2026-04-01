@@ -14,6 +14,9 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증에 실패했습니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
 
+    // CookingLog
+    COOKING_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "요리 기록을 찾을 수 없습니다."),
+
     // Recipe
     RECIPE_NOT_FOUND(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."),
     DUPLICATE_RECIPE_NAME(HttpStatus.CONFLICT, "이미 같은 이름의 레시피가 있습니다."),
