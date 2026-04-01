@@ -6,6 +6,7 @@ import com.kudip.cookinglog.CookingLogRepository;
 import com.kudip.recipe.dto.CookingLogSummary;
 import com.kudip.recipe.dto.IngredientStatItem;
 import com.kudip.recipe.dto.RecipeStatsResponse;
+import com.kudip.recipe.dto.TimeSlotStatItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,9 @@ public class RecipeStatsService {
                 .ingredientStats(cookingLogRepository.findIngredientStats(recipe).stream()
                         .map(p -> new IngredientStatItem(p.getIngredientName(), p.getUseCount(), p.getAverageRating()))
                         .toList())
-                .timeSlotStats(List.of())
+                .timeSlotStats(cookingLogRepository.findTimeSlotStats(recipe).stream()
+                        .map(p -> new TimeSlotStatItem(p.getTimeSlot(), p.getCount(), p.getAverageRating()))
+                        .toList())
                 .build();
     }
 }
