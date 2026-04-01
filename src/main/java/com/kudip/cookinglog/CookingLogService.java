@@ -8,7 +8,6 @@ import com.kudip.ingredient.IngredientService;
 import com.kudip.recipe.Recipe;
 import com.kudip.recipe.RecipeCategory;
 import com.kudip.recipe.RecipeRepository;
-import com.kudip.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,7 +23,6 @@ public class CookingLogService {
 
     private final CookingLogRepository cookingLogRepository;
     private final RecipeRepository recipeRepository;
-    private final UserRepository userRepository;
     private final IngredientService ingredientService;
 
     @Transactional
