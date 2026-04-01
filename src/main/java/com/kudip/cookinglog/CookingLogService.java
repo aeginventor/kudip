@@ -6,12 +6,16 @@ import com.kudip.cookinglog.dto.*;
 import com.kudip.ingredient.Ingredient;
 import com.kudip.ingredient.IngredientService;
 import com.kudip.recipe.Recipe;
+import com.kudip.recipe.RecipeCategory;
 import com.kudip.recipe.RecipeRepository;
 import com.kudip.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -47,6 +51,19 @@ public class CookingLogService {
         attachIngredients(log, request.getIngredients());
 
         return CookingLogResponse.from(log);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CookingLogResponse> getList(String email, Long recipeId,
+                                             LocalDate startDate, LocalDate endDate,
+                                             RecipeCategory category, Integer minRating) {
+        Specification<CookingLog> spec = CookingLogSpecification.filter(
+                email, recipeId, startDate, endDate, category, minRating);
+
+        return cookingLogRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(CookingLogResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)
