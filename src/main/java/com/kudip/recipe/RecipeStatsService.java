@@ -4,6 +4,7 @@ import com.kudip.common.exception.CustomException;
 import com.kudip.common.exception.ErrorCode;
 import com.kudip.cookinglog.CookingLogRepository;
 import com.kudip.recipe.dto.CookingLogSummary;
+import com.kudip.recipe.dto.IngredientStatItem;
 import com.kudip.recipe.dto.RecipeStatsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -42,7 +43,9 @@ public class RecipeStatsService {
                 .averageRating(cookingLogRepository.findAverageRatingByRecipe(recipe))
                 .bestLog(bestLogList.isEmpty() ? null : bestLogList.get(0))
                 .recentLogs(recentLogs)
-                .ingredientStats(List.of())
+                .ingredientStats(cookingLogRepository.findIngredientStats(recipe).stream()
+                        .map(p -> new IngredientStatItem(p.getIngredientName(), p.getUseCount(), p.getAverageRating()))
+                        .toList())
                 .timeSlotStats(List.of())
                 .build();
     }
