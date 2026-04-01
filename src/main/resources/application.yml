@@ -16,6 +16,12 @@ cloud:
     s3:
       bucket: ${AWS_S3_BUCKET}
 
+spring:
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
