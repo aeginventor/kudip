@@ -1,9 +1,8 @@
 package com.kudip.cookinglog;
 
 public enum TimeSlot {
-    BREAKFAST,
+    MORNING,
     LUNCH,
     DINNER,
-    SNACK,
-    BRUNCH
+    NONE
 }
