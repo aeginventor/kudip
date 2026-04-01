@@ -1,6 +1,5 @@
 package com.kudip.cookinglog;
 
-import com.kudip.common.entity.BaseEntity;
 import com.kudip.ingredient.Ingredient;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -12,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "cooking_log_ingredients")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CookingLogIngredient extends BaseEntity {
+public class CookingLogIngredient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,16 +26,12 @@ public class CookingLogIngredient extends BaseEntity {
     private Ingredient ingredient;
 
     @Column(length = 50)
-    private String amount;
-
-    @Column(length = 200)
-    private String note;
+    private String quantity;
 
     @Builder
-    public CookingLogIngredient(CookingLog cookingLog, Ingredient ingredient, String amount, String note) {
+    public CookingLogIngredient(CookingLog cookingLog, Ingredient ingredient, String quantity) {
         this.cookingLog = cookingLog;
         this.ingredient = ingredient;
-        this.amount = amount;
-        this.note = note;
+        this.quantity = quantity;
     }
 }
