@@ -24,3 +24,5 @@ Thumbs.db
 # Logs
 *.log
 logs/
+!frontend/src/app/**/logs/
+!frontend/src/app/**/logs/**
