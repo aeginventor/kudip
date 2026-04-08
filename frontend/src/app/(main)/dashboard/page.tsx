@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useDashboard } from '@/hooks/useDashboard';
@@ -8,6 +9,7 @@ import CookingCalendar, { CookingCalendarSkeleton } from '@/components/dashboard
 import CategoryChart, { CategoryChartSkeleton } from '@/components/dashboard/CategoryChart';
 import TopRecipesChart, { TopRecipesChartSkeleton } from '@/components/dashboard/TopRecipesChart';
 import StarRating from '@/components/ui/StarRating';
+import LogInputModal from '@/components/log/LogInputModal';
 
 // ──────────────────────────────────────────────
 // SVG Icons
@@ -56,6 +58,7 @@ function formatDate(dateStr: string | null): string {
 // ──────────────────────────────────────────────
 export default function DashboardPage() {
   const { data, isLoading } = useDashboard();
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   const currentYearMonth = new Date().toISOString().slice(0, 7);
   const thisMonthCount =
@@ -204,9 +207,7 @@ export default function DashboardPage() {
 
       {/* ── FAB ── */}
       <button
-        onClick={() => {
-          /* STEP 7: LogInputModal 오픈 */
-        }}
+        onClick={() => setIsLogModalOpen(true)}
         className={[
           'fixed bottom-20 right-4 md:bottom-6 md:right-6',
           'flex items-center gap-2 px-5 py-3.5 rounded-full shadow-lg',
@@ -222,6 +223,8 @@ export default function DashboardPage() {
         </svg>
         기록하기
       </button>
+
+      <LogInputModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
     </div>
   );
 }
