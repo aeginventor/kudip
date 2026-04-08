@@ -131,6 +131,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const ratingRef = useRef<HTMLDivElement>(null);
 
   const { data: recipes = [] } = useRecipes();
   const createLog = useCreateCookingLog();
@@ -198,7 +199,11 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
       }
     }
     if (targetStep === 3) {
-      if (!form.rating) newErrors.rating = '맛 평가를 선택해주세요';
+      if (!form.rating) {
+        newErrors.rating = '맛 평가를 선택해주세요';
+        // 에러 시 평점 영역으로 스크롤
+        setTimeout(() => ratingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -416,7 +421,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
   const step3 = (
     <div className="space-y-5">
       {/* 맛 평가 */}
-      <div>
+      <div ref={ratingRef}>
         <FieldLabel required>맛 평가</FieldLabel>
         <div className="flex flex-col items-center gap-3 py-4 bg-orange-50 rounded-xl border border-orange-100">
           <StarRating
