@@ -18,6 +18,8 @@ export interface Recipe {
   name: string;
   category: Category;
   totalCookCount: number;
+  averageRating: number;
+  lastCookedAt: string | null;
   createdAt: string;
 }
 
