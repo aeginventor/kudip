@@ -23,10 +23,19 @@ export interface Recipe {
   createdAt: string;
 }
 
+export interface PagedData<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  page: number;
+  size: number;
+}
+
 export interface CookingLog {
   id: number;
   recipeId: number;
   recipeName: string;
+  category?: Category;
   cookedAt: string | null;
   timeSlot: TimeSlot;
   cookTimeMinutes: number | null;

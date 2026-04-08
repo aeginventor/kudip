@@ -1,5 +1,5 @@
 import apiClient from '@/lib/axios';
-import { ApiResponse, Category, CookingLog, TimeSlot } from '@/types';
+import { ApiResponse, Category, CookingLog, PagedData, TimeSlot } from '@/types';
 
 export interface CreateCookingLogData {
   recipeId?: number;
@@ -35,4 +35,45 @@ export const uploadImages = (logId: number, files: File[]) => {
 export const deleteImage = (logId: number, imageId: number) =>
   apiClient
     .delete<ApiResponse<void>>(`/api/logs/${logId}/images/${imageId}`)
+    .then((res) => res.data);
+
+export interface GetLogsParams {
+  page?: number;
+  size?: number;
+  category?: Category;
+  minRating?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface UpdateCookingLogData {
+  recipeId?: number;
+  cookedAt?: string;
+  timeSlot?: TimeSlot;
+  cookTimeMinutes?: number | null;
+  recipeMemo?: string | null;
+  processMemo?: string | null;
+  rating?: number;
+  diary?: string | null;
+  ingredients?: { name: string; quantity: string }[];
+}
+
+export const getCookingLogs = (params?: GetLogsParams) =>
+  apiClient
+    .get<ApiResponse<PagedData<CookingLog>>>('/api/logs', { params })
+    .then((res) => res.data.data);
+
+export const getCookingLog = (id: number) =>
+  apiClient
+    .get<ApiResponse<CookingLog>>(`/api/logs/${id}`)
+    .then((res) => res.data.data);
+
+export const updateCookingLog = (id: number, data: UpdateCookingLogData) =>
+  apiClient
+    .put<ApiResponse<CookingLog>>(`/api/logs/${id}`, data)
+    .then((res) => res.data.data);
+
+export const deleteCookingLog = (id: number) =>
+  apiClient
+    .delete<ApiResponse<void>>(`/api/logs/${id}`)
     .then((res) => res.data);
