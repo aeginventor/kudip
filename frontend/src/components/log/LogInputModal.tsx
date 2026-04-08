@@ -7,7 +7,7 @@ import StarRating from '@/components/ui/StarRating';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import TagInput from '@/components/ui/TagInput';
-import { useRecipes } from '@/hooks/useRecipes';
+import { useRecipes, useRecipeStats } from '@/hooks/useRecipes';
 import { useCreateCookingLog } from '@/hooks/useCookingLogs';
 import { uploadImages } from '@/services/cookingLog';
 import { Category, TimeSlot } from '@/types';
@@ -134,6 +134,14 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
 
   const { data: recipes = [] } = useRecipes();
   const createLog = useCreateCookingLog();
+
+  // 선택된 기존 레시피의 재료 이름을 자동완성 후보로 사용
+  const selectedRecipeId =
+    form.recipeId !== 'new' && form.recipeId !== '' ? Number(form.recipeId) : 0;
+  const { data: selectedRecipeStats } = useRecipeStats(selectedRecipeId);
+  const ingredientSuggestions = (selectedRecipeStats?.ingredientStats ?? []).map(
+    (s) => s.ingredientName
+  );
 
   // ESC 닫기 + body 스크롤 잠금
   useEffect(() => {
@@ -356,6 +364,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         <TagInput
           value={form.ingredients}
           onChange={(v) => set('ingredients', v)}
+          suggestions={ingredientSuggestions}
           placeholder="재료 입력 후 Enter (예: 돼지고기 200g)"
         />
       </div>
