@@ -8,9 +8,9 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import TagInput from '@/components/ui/TagInput';
 import { useRecipes, useRecipeStats } from '@/hooks/useRecipes';
-import { useCreateCookingLog } from '@/hooks/useCookingLogs';
+import { useCreateCookingLog, useUpdateCookingLog } from '@/hooks/useCookingLogs';
 import { uploadImages } from '@/services/cookingLog';
-import { Category, TimeSlot } from '@/types';
+import { Category, CookingLog, TimeSlot } from '@/types';
 
 // ── 타입 ──
 interface FormState {
@@ -73,6 +73,34 @@ function yesterdayStr(): string {
   return d.toISOString().split('T')[0];
 }
 
+/** 기존 로그의 cookedAt을 dateMode/customDate로 변환 */
+function parseDateMode(cookedAt: string | null): Pick<FormState, 'dateMode' | 'customDate'> {
+  if (!cookedAt) return { dateMode: 'today', customDate: '' };
+  const date = cookedAt.split('T')[0];
+  if (date === todayStr()) return { dateMode: 'today', customDate: '' };
+  if (date === yesterdayStr()) return { dateMode: 'yesterday', customDate: '' };
+  return { dateMode: 'custom', customDate: date };
+}
+
+/** 기존 로그 데이터를 FormState로 변환 */
+function logToForm(log: CookingLog): FormState {
+  const { dateMode, customDate } = parseDateMode(log.cookedAt);
+  return {
+    recipeId: log.recipeId,
+    newRecipeName: '',
+    newRecipeCategory: 'KOREAN',
+    dateMode,
+    customDate,
+    timeSlot: log.timeSlot === 'NONE' ? '' : log.timeSlot,
+    ingredients: log.ingredients ?? [],
+    cookTimeMinutes: log.cookTimeMinutes ? String(log.cookTimeMinutes) : '',
+    recipeMemo: log.recipeMemo ?? '',
+    processMemo: log.processMemo ?? '',
+    rating: log.rating,
+    diary: log.diary ?? '',
+  };
+}
+
 // ── 공통 섹션 레이블 ──
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -119,11 +147,22 @@ function OptionGroup<T extends string>({
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  mode?: 'create' | 'edit';
+  initialData?: CookingLog;
 }
 
-export default function LogInputModal({ isOpen, onClose }: Props) {
+export default function LogInputModal({
+  isOpen,
+  onClose,
+  mode = 'create',
+  initialData,
+}: Props) {
+  const isEditMode = mode === 'edit';
+
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormState>(INITIAL_FORM);
+  const [form, setForm] = useState<FormState>(
+    isEditMode && initialData ? logToForm(initialData) : INITIAL_FORM
+  );
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -135,6 +174,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
 
   const { data: recipes = [] } = useRecipes();
   const createLog = useCreateCookingLog();
+  const updateLog = useUpdateCookingLog();
 
   // 선택된 기존 레시피의 재료 이름을 자동완성 후보로 사용
   const selectedRecipeId =
@@ -143,6 +183,18 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
   const ingredientSuggestions = (selectedRecipeStats?.ingredientStats ?? []).map(
     (s) => s.ingredientName
   );
+
+  // 수정 모드: isOpen이 true가 될 때 initialData로 폼 초기화
+  useEffect(() => {
+    if (isOpen && isEditMode && initialData) {
+      setForm(logToForm(initialData));
+      setStep(1);
+      setImages([]);
+      setPreviews([]);
+      setErrors({});
+      setSaveError('');
+    }
+  }, [isOpen, isEditMode, initialData]);
 
   // ESC 닫기 + body 스크롤 잠금
   useEffect(() => {
@@ -164,7 +216,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
 
   function handleClose() {
     previews.forEach(URL.revokeObjectURL);
-    setForm(INITIAL_FORM);
+    if (!isEditMode) setForm(INITIAL_FORM);
     setStep(1);
     setImages([]);
     setPreviews([]);
@@ -201,7 +253,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
     if (targetStep === 3) {
       if (!form.rating) {
         newErrors.rating = '맛 평가를 선택해주세요';
-        // 에러 시 평점 영역으로 스크롤
         setTimeout(() => ratingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
       }
     }
@@ -221,46 +272,79 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
     return form.customDate || undefined;
   }
 
-  // ── 저장 ──
+  // ── 저장 (신규 or 수정) ──
   async function handleSave() {
     if (!validate(3)) return;
     setSaveError('');
 
-    const payload = {
-      recipeId: form.recipeId !== 'new' && form.recipeId !== '' ? Number(form.recipeId) : undefined,
-      newRecipeName: form.recipeId === 'new' ? form.newRecipeName : undefined,
-      newRecipeCategory: form.recipeId === 'new' ? form.newRecipeCategory : undefined,
-      cookedAt: getCookedAt(),
-      timeSlot: (form.timeSlot || 'NONE') as TimeSlot,
-      cookTimeMinutes: form.cookTimeMinutes ? Number(form.cookTimeMinutes) : undefined,
-      recipeMemo: form.recipeMemo || undefined,
-      processMemo: form.processMemo || undefined,
-      rating: form.rating,
-      diary: form.diary || undefined,
-      ingredients: form.ingredients,
-    };
+    const cookedAt = getCookedAt();
+    const timeSlot = (form.timeSlot || 'NONE') as TimeSlot;
 
-    createLog.mutate(payload, {
-      onSuccess: async (log) => {
-        if (images.length > 0) {
-          try {
-            await uploadImages(log.id, images);
-          } catch {
-            setSaveError('로그는 저장됐지만 이미지 업로드에 실패했습니다');
-            return;
-          }
+    if (isEditMode && initialData) {
+      // ── 수정 모드 ──
+      const payload = {
+        recipeId: form.recipeId !== 'new' && form.recipeId !== '' ? Number(form.recipeId) : undefined,
+        cookedAt,
+        timeSlot,
+        cookTimeMinutes: form.cookTimeMinutes ? Number(form.cookTimeMinutes) : null,
+        recipeMemo: form.recipeMemo || null,
+        processMemo: form.processMemo || null,
+        rating: form.rating,
+        diary: form.diary || null,
+        ingredients: form.ingredients,
+      };
+
+      updateLog.mutate(
+        { id: initialData.id, data: payload },
+        {
+          onSuccess: async (updatedLog) => {
+            if (images.length > 0) {
+              try {
+                await uploadImages(updatedLog.id, images);
+              } catch {
+                setSaveError('저장됐지만 이미지 업로드에 실패했습니다');
+                return;
+              }
+            }
+            handleClose();
+          },
+          onError: () => setSaveError('저장에 실패했습니다. 다시 시도해주세요'),
         }
-        handleClose();
-      },
-      onError: () => {
-        setSaveError('저장에 실패했습니다. 다시 시도해주세요');
-      },
-    });
+      );
+    } else {
+      // ── 신규 생성 모드 ──
+      const payload = {
+        recipeId: form.recipeId !== 'new' && form.recipeId !== '' ? Number(form.recipeId) : undefined,
+        newRecipeName: form.recipeId === 'new' ? form.newRecipeName : undefined,
+        newRecipeCategory: form.recipeId === 'new' ? form.newRecipeCategory : undefined,
+        cookedAt,
+        timeSlot,
+        cookTimeMinutes: form.cookTimeMinutes ? Number(form.cookTimeMinutes) : undefined,
+        recipeMemo: form.recipeMemo || undefined,
+        processMemo: form.processMemo || undefined,
+        rating: form.rating,
+        diary: form.diary || undefined,
+        ingredients: form.ingredients,
+      };
+
+      createLog.mutate(payload, {
+        onSuccess: async (log) => {
+          if (images.length > 0) {
+            try {
+              await uploadImages(log.id, images);
+            } catch {
+              setSaveError('로그는 저장됐지만 이미지 업로드에 실패했습니다');
+              return;
+            }
+          }
+          handleClose();
+        },
+        onError: () => setSaveError('저장에 실패했습니다. 다시 시도해주세요'),
+      });
+    }
   }
 
   if (!isOpen) return null;
-
-  // ── 단계별 콘텐츠 ──
 
   // ────────── STEP 1 ──────────
   const step1 = (
@@ -286,13 +370,13 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
               {r.name}
             </option>
           ))}
-          <option value="new">+ 새 레시피로 등록</option>
+          {!isEditMode && <option value="new">+ 새 레시피로 등록</option>}
         </select>
         {errors.recipeId && <p className="text-xs text-red-500 mt-1">{errors.recipeId}</p>}
       </div>
 
-      {/* 새 레시피 인라인 입력 */}
-      {form.recipeId === 'new' && (
+      {/* 새 레시피 인라인 입력 (신규 모드 전용) */}
+      {form.recipeId === 'new' && !isEditMode && (
         <div className="bg-orange-50 rounded-xl p-4 space-y-3 border border-orange-100">
           <Input
             label="새 레시피 이름"
@@ -315,7 +399,9 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
                     category={opt.value}
                     className={[
                       'cursor-pointer px-3 py-1 text-sm transition-opacity',
-                      form.newRecipeCategory === opt.value ? 'opacity-100 ring-2 ring-offset-1 ring-orange-400' : 'opacity-60',
+                      form.newRecipeCategory === opt.value
+                        ? 'opacity-100 ring-2 ring-offset-1 ring-orange-400'
+                        : 'opacity-60',
                     ].join(' ')}
                   />
                 </button>
@@ -363,7 +449,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
   // ────────── STEP 2 ──────────
   const step2 = (
     <div className="space-y-5">
-      {/* 재료 */}
       <div>
         <FieldLabel>재료</FieldLabel>
         <TagInput
@@ -374,7 +459,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         />
       </div>
 
-      {/* 조리 시간 */}
       <div>
         <FieldLabel>조리 시간</FieldLabel>
         <div className="flex items-center gap-2">
@@ -391,7 +475,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         </div>
       </div>
 
-      {/* 레시피 메모 */}
       <div>
         <FieldLabel>레시피 메모</FieldLabel>
         <textarea
@@ -403,7 +486,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         />
       </div>
 
-      {/* 조리 과정 메모 */}
       <div>
         <FieldLabel>조리 과정 메모</FieldLabel>
         <textarea
@@ -420,7 +502,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
   // ────────── STEP 3 ──────────
   const step3 = (
     <div className="space-y-5">
-      {/* 맛 평가 */}
       <div ref={ratingRef}>
         <FieldLabel required>맛 평가</FieldLabel>
         <div className="flex flex-col items-center gap-3 py-4 bg-orange-50 rounded-xl border border-orange-100">
@@ -439,7 +520,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         {errors.rating && <p className="text-xs text-red-500 mt-1">{errors.rating}</p>}
       </div>
 
-      {/* 요리 일기 */}
       <div>
         <FieldLabel>요리 일기</FieldLabel>
         <textarea
@@ -451,11 +531,8 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         />
       </div>
 
-      {/* 사진 업로드 */}
       <div>
         <FieldLabel>사진 ({images.length}/3)</FieldLabel>
-
-        {/* 미리보기 썸네일 */}
         {previews.length > 0 && (
           <div className="flex gap-2 mb-3">
             {previews.map((src, i) => (
@@ -476,8 +553,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
             ))}
           </div>
         )}
-
-        {/* 업로드 영역 */}
         {images.length < 3 && (
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -490,7 +565,9 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
             onClick={() => fileInputRef.current?.click()}
             className={[
               'flex flex-col items-center justify-center gap-2 h-24 rounded-xl border-2 border-dashed cursor-pointer transition-colors',
-              isDragging ? 'border-orange-400 bg-orange-50' : 'border-gray-300 hover:border-orange-300 hover:bg-gray-50',
+              isDragging
+                ? 'border-orange-400 bg-orange-50'
+                : 'border-gray-300 hover:border-orange-300 hover:bg-gray-50',
             ].join(' ')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -513,7 +590,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         />
       </div>
 
-      {/* 에러 메시지 */}
       {saveError && (
         <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
@@ -526,9 +602,8 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
   );
 
   const stepContent = [step1, step2, step3][step - 1];
-  const isSaving = createLog.isPending;
+  const isSaving = createLog.isPending || updateLog.isPending;
 
-  // ── 포털 렌더링 ──
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
@@ -536,14 +611,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
       aria-modal="true"
       aria-label={STEP_TITLES[step - 1]}
     >
-      {/* 오버레이 */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={handleClose}
-        aria-hidden="true"
-      />
-
-      {/* 패널 */}
+      <div className="absolute inset-0 bg-black/50" onClick={handleClose} aria-hidden="true" />
       <div
         ref={panelRef}
         className={[
@@ -560,7 +628,12 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         {/* ── 헤더 ── */}
         <div className="px-4 pt-2 pb-3 border-b border-gray-100 shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-900">{STEP_TITLES[step - 1]}</h2>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">{STEP_TITLES[step - 1]}</h2>
+              {isEditMode && (
+                <span className="text-xs text-orange-500 font-medium">수정 모드</span>
+              )}
+            </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-gray-400 font-medium">{step}/3</span>
               <button
@@ -575,7 +648,6 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
               </button>
             </div>
           </div>
-          {/* 진행 바 */}
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-orange-500 rounded-full transition-all duration-300"
@@ -584,7 +656,7 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
           </div>
         </div>
 
-        {/* ── 콘텐츠 (스크롤 가능) ── */}
+        {/* ── 콘텐츠 ── */}
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2">
           {stepContent}
         </div>
@@ -592,31 +664,19 @@ export default function LogInputModal({ isOpen, onClose }: Props) {
         {/* ── 하단 네비게이션 ── */}
         <div className="px-4 py-4 border-t border-gray-100 flex gap-2 shrink-0 bg-white">
           {step > 1 ? (
-            <Button
-              variant="secondary"
-              onClick={() => setStep((s) => s - 1)}
-              disabled={isSaving}
-              className="flex-none"
-            >
+            <Button variant="secondary" onClick={() => setStep((s) => s - 1)} disabled={isSaving} className="flex-none">
               이전
             </Button>
           ) : (
-            <Button
-              variant="ghost"
-              onClick={handleClose}
-              disabled={isSaving}
-              className="flex-none"
-            >
+            <Button variant="ghost" onClick={handleClose} disabled={isSaving} className="flex-none">
               취소
             </Button>
           )}
           {step < 3 ? (
-            <Button fullWidth onClick={handleNext}>
-              다음
-            </Button>
+            <Button fullWidth onClick={handleNext}>다음</Button>
           ) : (
             <Button fullWidth loading={isSaving} onClick={handleSave}>
-              저장
+              {isEditMode ? '수정 완료' : '저장'}
             </Button>
           )}
         </div>
