@@ -11,6 +11,14 @@ export function useRecipes() {
   });
 }
 
+export function useRecipe(id: number) {
+  return useQuery({
+    queryKey: ['recipes', id],
+    queryFn: () => recipeService.getRecipe(id),
+    enabled: !!id,
+  });
+}
+
 export function useRecipeStats(id: number) {
   return useQuery({
     queryKey: ['recipes', id, 'stats'],
