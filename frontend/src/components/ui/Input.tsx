@@ -1,6 +1,6 @@
 'use client';
 
-import { InputHTMLAttributes, useState } from 'react';
+import { InputHTMLAttributes, useState, forwardRef } from 'react';
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
@@ -8,14 +8,14 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>
   type?: InputHTMLAttributes<HTMLInputElement>['type'];
 }
 
-export default function Input({
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
   label,
   errorMessage,
   type = 'text',
   className = '',
   id,
   ...props
-}: InputProps) {
+}, ref) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
@@ -36,6 +36,7 @@ export default function Input({
       <div className="relative">
         <input
           {...props}
+          ref={ref}
           id={inputId}
           type={inputType}
           className={[
@@ -80,4 +81,6 @@ export default function Input({
       )}
     </div>
   );
-}
+});
+
+export default Input;
