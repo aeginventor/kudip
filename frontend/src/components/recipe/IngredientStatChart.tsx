@@ -121,7 +121,7 @@ export default function IngredientStatChart({ ingredientStats }: Props) {
           />
           <Tooltip
             cursor={{ fill: '#fff7ed' }}
-            formatter={(value: number) => [`${Number(value).toFixed(1)}점`, '평균 평점']}
+            formatter={(value) => [`${Number(value).toFixed(1)}점`, '평균 평점']}
             contentStyle={{
               borderRadius: '10px',
               border: 'none',

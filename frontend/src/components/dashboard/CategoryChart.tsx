@@ -86,7 +86,7 @@ export default function CategoryChart({ categoryStats }: Props) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number, name: string) => [`${value}회`, name]}
+              formatter={(value, name) => [`${value}회`, name]}
               contentStyle={{
                 borderRadius: '10px',
                 border: 'none',

@@ -111,9 +111,9 @@ export default function TopRecipesChart({ topRecipes }: Props) {
             />
             <Tooltip
               cursor={{ fill: '#fff7ed' }}
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 if (name === 'count') return [`${value}회`, '조리 횟수'];
-                return [value, name];
+                return [`${value}`, String(name)];
               }}
               contentStyle={{
                 borderRadius: '10px',
