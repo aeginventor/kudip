@@ -130,7 +130,7 @@ export default function TopRecipesChart({ topRecipes }: Props) {
                 dataKey="count"
                 position="insideRight"
                 style={{ fill: '#7c2d12', fontSize: 11, fontWeight: 700 }}
-                formatter={(v: number) => `${v}회`}
+                formatter={(v) => `${v}회`}
               />
               <LabelList
                 dataKey="averageRating"
