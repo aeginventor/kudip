@@ -46,6 +46,12 @@ export default function SignupPage() {
     );
   };
 
+  const generalError =
+    signup.isError &&
+    !(isAxiosError(signup.error) && signup.error.response?.status === 409)
+      ? '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      : null;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <h1 className="text-xl font-semibold text-gray-900 mb-6">회원가입</h1>
@@ -77,6 +83,9 @@ export default function SignupPage() {
           errorMessage={errors.passwordConfirm?.message}
           {...register('passwordConfirm')}
         />
+        {generalError && (
+          <p className="text-sm text-red-500 text-center">{generalError}</p>
+        )}
         <Button type="submit" fullWidth loading={signup.isPending} className="mt-2">
           회원가입
         </Button>
