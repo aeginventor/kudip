@@ -67,7 +67,7 @@ export default function RecipeDetailPage() {
   const id = Number(params.id);
 
   const { data: recipe } = useRecipe(id);
-  const { data: stats, isLoading } = useRecipeStats(id);
+  const { data: stats, isLoading, isError } = useRecipeStats(id);
   const updateRecipe = useUpdateRecipe();
   const deleteRecipe = useDeleteRecipe();
 
@@ -126,6 +126,21 @@ export default function RecipeDetailPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mb-3 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <p className="text-sm text-red-400 font-medium">데이터를 불러오지 못했습니다</p>
+        <p className="text-xs text-gray-400 mt-1 mb-3">잠시 후 다시 시도해주세요</p>
+        <Button variant="ghost" size="sm" onClick={() => router.push('/recipes')}>
+          목록으로 돌아가기
+        </Button>
+      </div>
+    );
+  }
+
   if (!stats) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -163,24 +178,24 @@ export default function RecipeDetailPage() {
       </div>
 
       {/* ── 2. 요약 카드 ── */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-          <p className="text-xs text-gray-500 mb-1">총 조리 횟수</p>
-          <p className="text-2xl font-bold text-orange-500">{stats.totalCount}</p>
-          <p className="text-xs text-gray-400">회</p>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
+          <p className="text-[10px] text-gray-500 mb-1">총 조리 횟수</p>
+          <p className="text-xl font-bold text-orange-500">{stats.totalCount}</p>
+          <p className="text-[10px] text-gray-400">회</p>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-          <p className="text-xs text-gray-500 mb-1">평균 평점</p>
-          <p className="text-2xl font-bold text-orange-500">
+        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
+          <p className="text-[10px] text-gray-500 mb-1">평균 평점</p>
+          <p className="text-xl font-bold text-orange-500">
             {stats.averageRating.toFixed(1)}
           </p>
           <div className="flex justify-center mt-0.5">
             <StarRating value={stats.averageRating} mode="display" size="sm" />
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-          <p className="text-xs text-gray-500 mb-1">최고 평점 날짜</p>
-          <p className="text-sm font-semibold text-gray-700 leading-tight">{bestLogDate}</p>
+        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
+          <p className="text-[10px] text-gray-500 mb-1">최고 평점</p>
+          <p className="text-xs font-semibold text-gray-700 leading-tight">{bestLogDate}</p>
           {stats.bestLog && (
             <p className="text-xs text-yellow-500 mt-0.5">★ {stats.bestLog.rating}점</p>
           )}
@@ -193,7 +208,7 @@ export default function RecipeDetailPage() {
       {/* ── 4. 시간대별 통계 ── */}
       <div>
         <h2 className="text-sm font-semibold text-gray-700 mb-3">시간대별 통계</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {(['MORNING', 'LUNCH', 'DINNER'] as const).map((slot) => {
             const cfg = TIME_SLOT_CONFIG[slot];
             const stat = timeSlotMap.get(slot);
@@ -201,24 +216,24 @@ export default function RecipeDetailPage() {
               <div
                 key={slot}
                 className={[
-                  'rounded-2xl p-4 shadow-sm border border-gray-100',
+                  'rounded-2xl p-3 shadow-sm border border-gray-100',
                   stat ? cfg.bgColor : 'bg-white',
                 ].join(' ')}
               >
-                <div className="text-lg mb-1">{cfg.icon}</div>
-                <p className={['text-sm font-medium mb-2', stat ? cfg.textColor : 'text-gray-400'].join(' ')}>
+                <div className="text-base mb-1">{cfg.icon}</div>
+                <p className={['text-xs font-medium mb-1.5', stat ? cfg.textColor : 'text-gray-400'].join(' ')}>
                   {cfg.label}
                 </p>
                 {stat ? (
                   <>
-                    <p className="text-xl font-bold text-gray-800">{stat.count}회</p>
-                    <div className="flex items-center gap-1 mt-1">
+                    <p className="text-lg font-bold text-gray-800">{stat.count}회</p>
+                    <div className="flex items-center gap-0.5 mt-1 flex-wrap">
                       <StarRating value={stat.averageRating} mode="display" size="sm" />
                       <span className="text-xs text-gray-500">{stat.averageRating.toFixed(1)}</span>
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-400">기록 없음</p>
+                  <p className="text-xs text-gray-400">기록 없음</p>
                 )}
               </div>
             );

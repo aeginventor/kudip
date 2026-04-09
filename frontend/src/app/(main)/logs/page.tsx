@@ -68,7 +68,7 @@ export default function LogsPage() {
     endDate: appliedFilter.endDate || undefined,
   };
 
-  const { data: paged, isLoading } = useCookingLogs(queryParams);
+  const { data: paged, isLoading, isError } = useCookingLogs(queryParams);
 
   const logs = paged?.content ?? [];
   const totalPages = paged?.totalPages ?? 1;
@@ -157,14 +157,14 @@ export default function LogsPage() {
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
             최소 평점
           </p>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {[0, 1, 2, 3, 4, 5].map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setF('minRating', r)}
                 className={[
-                  'w-9 h-9 rounded-lg text-sm font-medium border transition-colors',
+                  'px-3 h-8 rounded-lg text-xs font-medium border transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400',
                   filter.minRating === r
                     ? 'bg-orange-500 text-white border-orange-500'
@@ -172,7 +172,7 @@ export default function LogsPage() {
                 ].join(' ')}
                 aria-label={r === 0 ? '전체' : `${r}점 이상`}
               >
-                {r === 0 ? '전체' : `${r}★`}
+                {r === 0 ? '전체' : `${r}★ 이상`}
               </button>
             ))}
           </div>
@@ -197,6 +197,14 @@ export default function LogsPage() {
           {Array.from({ length: 5 }).map((_, i) => (
             <LogCardSkeleton key={i} />
           ))}
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mb-3 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-sm text-red-400 font-medium">기록을 불러오지 못했습니다</p>
+          <p className="text-xs text-gray-400 mt-1">잠시 후 다시 시도해주세요</p>
         </div>
       ) : logs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">

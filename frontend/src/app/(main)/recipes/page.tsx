@@ -39,7 +39,7 @@ export default function RecipesPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: recipes, isLoading } = useRecipes();
+  const { data: recipes, isLoading, isError } = useRecipes();
   const createRecipe = useCreateRecipe();
 
   const {
@@ -98,6 +98,14 @@ export default function RecipesPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <RecipeCardSkeleton key={i} />
           ))}
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mb-3 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-sm text-red-400 font-medium">레시피를 불러오지 못했습니다</p>
+          <p className="text-xs text-gray-400 mt-1">잠시 후 다시 시도해주세요</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
